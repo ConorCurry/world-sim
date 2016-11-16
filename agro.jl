@@ -9,6 +9,9 @@ export MapTile, zoom, randmap, printMap
 
 #TODO: Separate library functions and testing into distinct files.
 
+#TODO: Some functions that move element-wise on one level of a map
+#      to perform a mutation on cell visited. Incr or decr a value
+
 #TODO: More TODOs. Should do more project planning / organization.
 
 type MapTile{T<:Unsigned} #TODO: Does this really need to be unsigned?
