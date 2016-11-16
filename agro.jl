@@ -1,6 +1,7 @@
 module AgroGame
+using Cairo #for printMap
 
-export MapTile, zoom, randmap
+export MapTile, zoom, randmap, printMap
 
 #TODO: Want to generate traversal of levels, saving previous level
 #      or preserving it's random seed for regeneration, an option?
@@ -26,7 +27,7 @@ end
 #Also, luck currently doesn't impart any negative weight. Desired?
 #TODO: Standarize luck values OR evaluate properties of values.
 #numRolls dictates relative uniformity
-function getRandVal(luck, numRolls=5)
+function getRandVal(luck, numRolls=20)
   hiVal = Int(typemax(UInt8))
   m = hiVal/numRolls
   rolls = Array{UInt8}(numRolls)
@@ -45,14 +46,34 @@ function getRandVal(luck, numRolls=5)
   return UInt8(sum(rolls))
 end
 
-
-
 #Note here that the default args must be separated by a semi-colon. Unsure why.
 function randmap(x::Int, y::Int; T::DataType=UInt8, luck=MapTile(zero(T),zero(T)))
   lo = typemin(T); hi = typemax(T)
   genMap = [MapTile{T}(getRandVal(luck.moisture), getRandVal(luck.fertility))
               for xdim in 1:x, ydim in 1:y]
   return genMap
+end
+
+function printMap(tiles, mapName, imageSize::Tuple{Unsigned, Unsigned})
+  c = CairoRGBSurface(imageSize...)
+  cr = CairoContext(c)
+
+  xDenom = imageSize[1]/size(tiles, 1)
+  yDenom = imageSize[2]/size(tiles, 2)
+
+  save(cr)
+  for i in 1:511
+    for j in 1:511
+      g = tiles[trunc(Int, i/xDenom)+1,trunc(Int, j/yDenom)+1].moisture/0xFF
+      r = 1-g
+      set_source_rgb(cr,r,g,0)
+      rectangle(cr,i,j,1,1)
+      fill(cr)
+    end
+  end
+  print("writing $mapName.png...")
+  write_to_png(c,"$mapName.png")
+  println("done.")
 end
 
 end #ofModule
