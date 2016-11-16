@@ -71,7 +71,7 @@ function printMap(tiles, mapName, imageSize::Tuple{Unsigned, Unsigned})
       fill(cr)
     end
   end
-  print("writing $mapName.png...")
+  print("Writing $mapName.png...")
   write_to_png(c,"$mapName.png")
   println("done.")
 end
