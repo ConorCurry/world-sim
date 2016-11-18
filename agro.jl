@@ -1,3 +1,4 @@
+
 module AgroGame
 using Cairo #for printMap
 
@@ -77,6 +78,29 @@ function printMap(tiles, mapName, imageSize::Tuple{Unsigned, Unsigned})
   print("Writing $mapName.png...")
   write_to_png(c,"$mapName.png")
   println("done.")
+end
+
+using Lazy
+
+@rec function graze(tileMap, startIndex::Tuple)
+  moistureReq = 2
+  mean(getNeighborhood())
+end
+
+#Gets the neighbors of a tile
+function getNeighborhood(tileMap, tileIndex::Tuple; dist=1)
+  #bound indices to prevent out of bounds exception. Trimmed at edges.
+  xRange = intersect(tileIndex[1]-dist:tileIndex[1]+dist, 1:size(A)[1])
+  yRange = intersect(tileIndex[2]-dist:tileIndex[2]+dist, 1:size(A)[2])
+  #gotta test to make sure there isn't some unforseen edge case
+  neighborhood = @view tileMap[xRange,yRange]
+  return neighborhood
+end
+
+#given a subarray and a (linear) index,
+#translate to a (linear) index in the parent array
+function subArrayPassthrough(sA::SubArray, sIdx::Int)
+
 end
 
 end #ofModule
