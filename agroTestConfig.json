@@ -1,1 +1,1 @@
-{"IMAGE_SIZE":[512,512],"MAP_SIZE":[512,512],"ZOOM_SWITCH":false,"LUCK":80,"PRINT_ZOOM":true,"MOISTURE_HIST":true,"ROOT_HIST_PATH":"moistureRoot.png","ZOOM_HIST_PATH":"moistureZoom.png","PRINT_ROOT":true}
+{"IMAGE_SIZE":[512,512],"MAP_SIZE":[512,512],"ZOOM_SWITCH":false,"LUCK":80,"NUM_ROLLS":4,"PRINT_ZOOM":true,"MOISTURE_HIST":true,"ROOT_HIST_PATH":"moistureRoot.png","ZOOM_HIST_PATH":"moistureZoom.png","PRINT_ROOT":true}

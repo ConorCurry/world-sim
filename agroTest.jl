@@ -6,46 +6,53 @@ include("agro.jl")
 
 #TESTING PARAMETERS
 #Tile size of simulated map
-MAP_SIZE = (512,512)
-#True for zoom based on first tile value in rootMap
-#False for map based on MAX LUCK EFFECT
-ZOOM_SWITCH = false
-LUCK = 0x80
-#True to generate histograms for moisture data (using Gadfly, slow)
-MOISTURE_HIST = true
-ROOT_HIST_PATH = "moistureRoot.png"
-ZOOM_HIST_PATH = "moistureZoom.png"
-#Params to print rootMap and zoomMap using Cairo graphics.
-PRINT_ROOT = true
-PRINT_ZOOM = true
-#Determines image size for the printed maps
-IMAGE_SIZE = (0x200, 0x200)
+# MAP_SIZE = (512,512)
+# #True for zoom based on first tile value in rootMap
+# #False for map based on MAX LUCK EFFECT
+# ZOOM_SWITCH = false
+# LUCK = 0x80
+# #True to generate histograms for moisture data (using Gadfly, slow)
+# MOISTURE_HIST = true
+# ROOT_HIST_PATH = "moistureRoot.png"
+# ZOOM_HIST_PATH = "moistureZoom.png"
+# #Params to print rootMap and zoomMap using Cairo graphics.
+# PRINT_ROOT = true
+# PRINT_ZOOM = true
+# #Determines image size for the printed maps
+# IMAGE_SIZE = (0x200, 0x200)
+using JSON
+config = JSON.parsefile("agroTestConfig.json")
+config["LUCK"] = convert(UInt8, config["LUCK"])
 
 #Generate rootMap
 print("Generating rootMap...")
-@time rootMap = AgroGame.randmap(MAP_SIZE...)
+@time rootMap = AgroGame.randmap(config["MAP_SIZE"]...,
+                                 numRolls=config["NUM_ROLLS"])
 
 #Generate zoomMap
 print("Generating zoomMap...")
-if ZOOM_SWITCH
+if config["ZOOM_SWITCH"]
   @show rootMap[1,1]
-  @time zoomMap = AgroGame.zoom(rootMap[1,1], MAP_SIZE)
+  @time zoomMap = AgroGame.zoom(rootMap[1,1],
+                                config["MAP_SIZE"],
+                                config["NUM_ROLLS"])
 else
-  @time zoomMap = AgroGame.zoom(AgroGame.MapTile(LUCK, LUCK), MAP_SIZE)
+  luckTile = AgroGame.MapTile(config["LUCK"], config["LUCK"])
+  @time zoomMap = AgroGame.zoom(luckTile,
+                                config["MAP_SIZE"],
+                                config["NUM_ROLLS"])
 end
 
 moistureDataRoot = [tile.moisture for tile in rootMap]
 moistureDataZoom = [tile.moisture for tile in zoomMap]
-rootMean = round(mean(moistureDataRoot))
-zoomMean = round(mean(moistureDataZoom))
+rootMean,zoomMean = round(mean(moistureDataRoot)), round(mean(moistureDataZoom))
 println("\nRoot Mean: $rootMean\nZoom Mean: $zoomMean")
 
-@time if MOISTURE_HIST
+@time if config["MOISTURE_HIST"]
   println("\nStarting plot...")
 
   print("\tImporting Gadfly...")
-  @time using Gadfly
-  using Colors
+  @time using Gadfly, Colors
   Gadfly.push_theme(:dark)
   print("\tPlotting root...")
   @time moisturePlotRoot = plot(y=moistureDataRoot,
@@ -57,28 +64,28 @@ println("\nRoot Mean: $rootMean\nZoom Mean: $zoomMean")
                                 Geom.histogram2d(xbincount=128,
                                                  ybincount=128))
   print("\tDrawing PNG...")
-  @time draw(PNG(ROOT_HIST_PATH, 5inch, 5inch), moisturePlotRoot)
-  println("\t\tSaved as $ROOT_HIST_PATH")
+  @time draw(PNG(config["ROOT_HIST_PATH"], 5inch, 5inch), moisturePlotRoot)
+  println("\t\tSaved as $(config["ROOT_HIST_PATH"])")
   print("\tPlotting zoom...")
   @time moisturePlotZoom = plot(layer(x=moistureDataZoom,
                                       Geom.histogram(bincount=128, density=true),
-                                      Theme(style(default_color=RGB{U8}(1.0,0.647,0.))),
+                                      Theme(style(default_color=RGB{U8}(1.0,0.647,0.)))),
                                 layer(x=moistureDataRoot,
                                       Geom.histogram(bincount=128, density=true)),
                                       Theme(style(default_color=RGB{U8}(0.678,0.847,0.902))))
   print("\tDrawing PNG...")
-  @time draw(PNG(ZOOM_HIST_PATH, 6inch, 4inch), moisturePlotZoom)
-  println("\t\tSaved as $ZOOM_HIST_PATH")
+  @time draw(PNG(config["ZOOM_HIST_PATH"], 6inch, 4inch), moisturePlotZoom)
+  println("\t\tSaved as $(config["ZOOM_HIST_PATH"])")
 
   print("Finished histograms in")
 end
 println()
 
-if PRINT_ROOT
-  AgroGame.printMap(rootMap, "rootMap", IMAGE_SIZE)
+if config["PRINT_ROOT"]
+  AgroGame.printMap(rootMap, "rootMap", config["IMAGE_SIZE"])
 end
-if PRINT_ZOOM
-  AgroGame.printMap(zoomMap, "zoomMap", IMAGE_SIZE)
+if config["PRINT_ZOOM"]
+  AgroGame.printMap(zoomMap, "zoomMap", config["IMAGE_SIZE"])
 end
 
 println("TESTS COMPLETE.")

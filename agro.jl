@@ -20,8 +20,8 @@ type MapTile{T<:Unsigned} #TODO: Does this really need to be unsigned?
   fertility::T
 end
 
-function zoom(zoomTile::MapTile, mapSize::Tuple)
-  return randmap(mapSize..., luck=zoomTile)
+function zoom(zoomTile::MapTile, mapSize::Array, numRolls::Integer)
+  return randmap(mapSize..., luck=zoomTile, numRolls=numRolls)
 end
 
 #gets a random value weighted based on rolls
@@ -31,7 +31,10 @@ end
 #Also, luck currently doesn't impart any negative weight. Desired?
 #TODO: Standarize luck values OR evaluate properties of values.
 #numRolls dictates relative uniformity
-function getRandVal(luck, numRolls=4)
+function getRandVal(luck::UInt8, numRolls::Integer)
+  if numRolls > 8
+    throw("Too many rolls specified. Decrease to prevent system hang.")
+  end
   hiVal = Int(typemax(UInt8))
   m = hiVal/numRolls
   rolls = Array{UInt8}(numRolls)
@@ -51,14 +54,18 @@ function getRandVal(luck, numRolls=4)
 end
 
 #Note here that the default args must be separated by a semi-colon. Unsure why.
-function randmap(x::Int, y::Int; T::DataType=UInt8, luck=MapTile(zero(T),zero(T)))
+function randmap(x::Int, y::Int;
+                 T::DataType=UInt8,
+                 luck=MapTile(zero(T),zero(T)),
+                 numRolls::Integer=1)
   lo = typemin(T); hi = typemax(T)
-  genMap = [MapTile{T}(getRandVal(luck.moisture), getRandVal(luck.fertility))
+  genMap = [MapTile{T}(getRandVal(luck.moisture, numRolls),
+                       getRandVal(luck.fertility, numRolls))
               for xdim in 1:x, ydim in 1:y]
   return genMap
 end
 
-function printMap(tiles, mapName, imageSize::Tuple{Unsigned, Unsigned})
+function printMap(tiles::Array, mapName::AbstractString, imageSize::Array)
   c = CairoRGBSurface(imageSize...)
   cr = CairoContext(c)
 
@@ -82,13 +89,13 @@ end
 
 using Lazy
 
-@rec function graze(tileMap, startIndex::Tuple)
+@rec function graze(tileMap, startIndex::Array)
   moistureReq = 2
   mean(getNeighborhood())
 end
 
 #Gets the neighbors of a tile
-function getNeighborhood(tileMap, tileIndex::Tuple; dist=1)
+function getNeighborhood(tileMap, tileIndex::Array; dist=1)
   #bound indices to prevent out of bounds exception. Trimmed at edges.
   xRange = intersect(tileIndex[1]-dist:tileIndex[1]+dist, 1:size(A)[1])
   yRange = intersect(tileIndex[2]-dist:tileIndex[2]+dist, 1:size(A)[2])
