@@ -6,10 +6,11 @@ include("agro.jl")
 
 #TESTING PARAMETERS
 #Tile size of simulated map
-MAP_SIZE = (64,64)
+MAP_SIZE = (512,512)
 #True for zoom based on first tile value in rootMap
 #False for map based on MAX LUCK EFFECT
 ZOOM_SWITCH = false
+LUCK = 0x80
 #True to generate histograms for moisture data (using Gadfly, slow)
 MOISTURE_HIST = true
 ROOT_HIST_PATH = "moistureRoot.svg"
@@ -30,12 +31,14 @@ if ZOOM_SWITCH
   @show rootMap[1,1]
   @time zoomMap = AgroGame.zoom(rootMap[1,1], MAP_SIZE)
 else
-  @time zoomMap = AgroGame.zoom(AgroGame.MapTile(0xFF, 0xFF), MAP_SIZE)
+  @time zoomMap = AgroGame.zoom(AgroGame.MapTile(LUCK, LUCK), MAP_SIZE)
 end
 
 moistureDataRoot = [tile.moisture for tile in rootMap]
 moistureDataZoom = [tile.moisture for tile in zoomMap]
-println("\nRoot Mean: $(mean(moistureDataRoot))\nZoom Mean: $(mean(moistureDataZoom))")
+rootMean = round(mean(moistureDataRoot))
+zoomMean = round(mean(moistureDataZoom))
+println("\nRoot Mean: $rootMean\nZoom Mean: $zoomMean")
 
 @time if MOISTURE_HIST
   println("\nStarting plot...")
@@ -43,14 +46,21 @@ println("\nRoot Mean: $(mean(moistureDataRoot))\nZoom Mean: $(mean(moistureDataZ
   print("\tImporting Gadfly...")
   @time using Gadfly
   print("\tPlotting root...")
-  @time moisturePlotRoot = plot(x=moistureDataRoot, Geom.histogram)
+  @time moisturePlotRoot = plot(y=moistureDataRoot,
+                                x=moistureDataZoom,
+                                Guide.xlabel("Zoom"),
+                                Guide.ylabel("Root"),
+                                Guide.xticks(ticks=[0,0x80,zoomMean,0xFF]),
+                                Guide.yticks(ticks=[0,0x80,rootMean,0xFF]),
+                                Geom.histogram2d(xbincount=64,
+                                                 ybincount=64))
   print("\tDrawing SVG...")
-  @time draw(SVG(ROOT_HIST_PATH, 4inch, 3inch), moisturePlotRoot)
+  @time draw(SVG(ROOT_HIST_PATH, 5inch, 5inch), moisturePlotRoot)
   println("\t\tSaved as $ROOT_HIST_PATH")
   print("\tPlotting zoom...")
-  @time moisturePlotZoom = plot(x=moistureDataZoom, Geom.histogram)
+  @time moisturePlotZoom = plot(x=moistureDataZoom, Geom.histogram(bincount=128, density=true))
   print("\tDrawing SVG...")
-  @time draw(SVG(ZOOM_HIST_PATH, 4inch, 3inch), moisturePlotZoom)
+  @time draw(SVG(ZOOM_HIST_PATH, 6inch, 4inch), moisturePlotZoom)
   println("\t\tSaved as $ZOOM_HIST_PATH")
 
   print("Finished histograms in")

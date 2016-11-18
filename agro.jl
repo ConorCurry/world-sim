@@ -30,7 +30,7 @@ end
 #Also, luck currently doesn't impart any negative weight. Desired?
 #TODO: Standarize luck values OR evaluate properties of values.
 #numRolls dictates relative uniformity
-function getRandVal(luck, numRolls=20)
+function getRandVal(luck, numRolls=4)
   hiVal = Int(typemax(UInt8))
   m = hiVal/numRolls
   rolls = Array{UInt8}(numRolls)
@@ -38,7 +38,7 @@ function getRandVal(luck, numRolls=20)
     while true
       rolls[i] = rand(0:m)
       if luck != 0
-        accRejVal = Int(rand(0:hiVal))
+        accRejVal = rand(0:m)
         y = -(luck/hiVal)*rolls[i]*numRolls + luck
         accRejVal > y && break
       else
