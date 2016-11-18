@@ -13,8 +13,8 @@ ZOOM_SWITCH = false
 LUCK = 0x80
 #True to generate histograms for moisture data (using Gadfly, slow)
 MOISTURE_HIST = true
-ROOT_HIST_PATH = "moistureRoot.svg"
-ZOOM_HIST_PATH = "moistureZoom.svg"
+ROOT_HIST_PATH = "moistureRoot.png"
+ZOOM_HIST_PATH = "moistureZoom.png"
 #Params to print rootMap and zoomMap using Cairo graphics.
 PRINT_ROOT = true
 PRINT_ZOOM = true
@@ -45,6 +45,8 @@ println("\nRoot Mean: $rootMean\nZoom Mean: $zoomMean")
 
   print("\tImporting Gadfly...")
   @time using Gadfly
+  using Colors
+  Gadfly.push_theme(:dark)
   print("\tPlotting root...")
   @time moisturePlotRoot = plot(y=moistureDataRoot,
                                 x=moistureDataZoom,
@@ -52,15 +54,20 @@ println("\nRoot Mean: $rootMean\nZoom Mean: $zoomMean")
                                 Guide.ylabel("Root"),
                                 Guide.xticks(ticks=[0,0x80,zoomMean,0xFF]),
                                 Guide.yticks(ticks=[0,0x80,rootMean,0xFF]),
-                                Geom.histogram2d(xbincount=64,
-                                                 ybincount=64))
-  print("\tDrawing SVG...")
-  @time draw(SVG(ROOT_HIST_PATH, 5inch, 5inch), moisturePlotRoot)
+                                Geom.histogram2d(xbincount=128,
+                                                 ybincount=128))
+  print("\tDrawing PNG...")
+  @time draw(PNG(ROOT_HIST_PATH, 5inch, 5inch), moisturePlotRoot)
   println("\t\tSaved as $ROOT_HIST_PATH")
   print("\tPlotting zoom...")
-  @time moisturePlotZoom = plot(x=moistureDataZoom, Geom.histogram(bincount=128, density=true))
-  print("\tDrawing SVG...")
-  @time draw(SVG(ZOOM_HIST_PATH, 6inch, 4inch), moisturePlotZoom)
+  @time moisturePlotZoom = plot(layer(x=moistureDataZoom,
+                                      Geom.histogram(bincount=128, density=true),
+                                      Theme(style(default_color=colorant"orange"))),
+                                layer(x=moistureDataRoot,
+                                      Geom.histogram(bincount=128, density=true)),
+                                      Theme(style(default_color=colorant"blue")))
+  print("\tDrawing PNG...")
+  @time draw(PNG(ZOOM_HIST_PATH, 6inch, 4inch), moisturePlotZoom)
   println("\t\tSaved as $ZOOM_HIST_PATH")
 
   print("Finished histograms in")
