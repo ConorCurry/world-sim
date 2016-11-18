@@ -62,10 +62,10 @@ println("\nRoot Mean: $rootMean\nZoom Mean: $zoomMean")
   print("\tPlotting zoom...")
   @time moisturePlotZoom = plot(layer(x=moistureDataZoom,
                                       Geom.histogram(bincount=128, density=true),
-                                      Theme(style(default_color=colorant"orange"))),
+                                      Theme(style(default_color=RGB{U8}(1.0,0.647,0.))),
                                 layer(x=moistureDataRoot,
                                       Geom.histogram(bincount=128, density=true)),
-                                      Theme(style(default_color=colorant"blue")))
+                                      Theme(style(default_color=RGB{U8}(0.678,0.847,0.902))))
   print("\tDrawing PNG...")
   @time draw(PNG(ZOOM_HIST_PATH, 6inch, 4inch), moisturePlotZoom)
   println("\t\tSaved as $ZOOM_HIST_PATH")
