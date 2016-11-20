@@ -89,25 +89,57 @@ end
 
 using Lazy
 
-@rec function graze(tileMap, startIndex::Array)
-  moistureReq = 2
-  mean(getNeighborhood())
+type Neighborhood
+  region::AbstractArray
+  center::AbstractArray{Int}
+end
+
+
+@rec function graze(idx::Array, tileMap, aggression, lifetime)
+  if lifetime == 0
+    return
+  end
+  if tileMap[idx...].moisture > aggression
+    tileMap[idx...].moisture -= aggression
+  else
+    tileMap[idx...].moisture = 0
+  end
+  nHood = getNeighborhood(tileMap, idx)
+  #TODO: This is hacky.
+  maxIdx = indmax(getfield.(nHood, [:moisture for _ in nHood]))
+  if lifetime > 195
+    @show idx
+    #@show nHood
+    @show getfield.(nHood, [:moisture for _ in nHood])
+    @show maxIdx
+    println("------------------------------------")
+  end
+  @> maxIdx subArrayPassthrough(nHood) graze(tileMap, aggression, lifetime-1)
+  #newIdx = @> tileMap getNeighborhood(idx) indmax() subArrayPassthrough()
+  #graze(newIdx, tileMap, aggression, lifetime-1)
 end
 
 #Gets the neighbors of a tile
 function getNeighborhood(tileMap, tileIndex::Array; dist=1)
   #bound indices to prevent out of bounds exception. Trimmed at edges.
-  xRange = intersect(tileIndex[1]-dist:tileIndex[1]+dist, 1:size(A)[1])
-  yRange = intersect(tileIndex[2]-dist:tileIndex[2]+dist, 1:size(A)[2])
+  xRange = intersect(tileIndex[1]-dist:tileIndex[1]+dist, 1:size(tileMap)[1])
+  yRange = intersect(tileIndex[2]-dist:tileIndex[2]+dist, 1:size(tileMap)[2])
   #gotta test to make sure there isn't some unforseen edge case
-  neighborhood = @view tileMap[xRange,yRange]
-  return neighborhood
+  return @view tileMap[xRange,yRange]
 end
 
-#given a subarray and a (linear) index,
-#translate to a (linear) index in the parent array
-function subArrayPassthrough(sA::SubArray, sIdx::Int)
+#given a subarray and an index,
+#translate to an index in the parent array
+function subArrayPassthrough(sIdx::Array, sA::SubArray)::Array
+  return [sA.indexes[1].start-1 + sIdx[1], sA.indexes[2].start-1 + sIdx[2]]
+end
 
+#takes linear index
+function subArrayPassthrough(linIdx::Integer, sA::SubArray)::Array
+  parentSize = size(sA.parent)
+  xIdx = trunc(Int, linIdx/parentSize[1]) + 1
+  yIdx = (parentSize[1] % linIdx) + 1
+  return subArrayPassthrough([xIdx, yIdx], sA)
 end
 
 end #ofModule

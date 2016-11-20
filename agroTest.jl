@@ -29,6 +29,12 @@ print("Generating rootMap...")
 @time rootMap = AgroGame.randmap(config["MAP_SIZE"]...,
                                  numRolls=config["NUM_ROLLS"])
 
+if config["PRINT_ROOT"]
+ AgroGame.printMap(rootMap, "preGrazeRootMap", config["IMAGE_SIZE"])
+end
+
+@time AgroGame.graze([32,32], rootMap, 0x80, 200)
+
 #Generate zoomMap
 print("Generating zoomMap...")
 if config["ZOOM_SWITCH"]
